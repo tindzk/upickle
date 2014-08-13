@@ -47,9 +47,11 @@ object Build extends sbt.Build{
 
   )
 
-  lazy val root = cross.root
+  lazy val root = cross.root.aggregate(sharedJs, sharedJvm)
 
-  lazy val shared = project.in(file("shared")).settings(scalaJSSettings:_*).settings(
+  val sharedSettings = Seq(
+
+    target := target.value / "js",
     libraryDependencies ++= Seq(
       "com.lihaoyi" %% "acyclic" % "0.1.2" % "provided",
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
@@ -121,11 +123,19 @@ object Build extends sbt.Build{
       Seq(file)
     }
   )
-  lazy val js = cross.js.dependsOn(shared % "compile->compile;test->test").settings(
+  lazy val sharedJvm = project.in(file("shared")).settings(sharedSettings:_*).settings(
+    target := target.value / "jvm",
+    moduleName := "shared"
+  )
+  lazy val sharedJs = project.in(file("shared")).settings(scalaJSSettings ++ sharedSettings:_*).settings(
+    target := target.value / "js",
+    moduleName := "shared"
+  )
+  lazy val js = cross.js.dependsOn(sharedJs % "compile->compile;test->test").settings(
     (jsEnv in Test) := new NodeJSEnv
   )
 
-  lazy val jvm = cross.jvm.dependsOn(shared % "compile->compile;test->test").settings(
+  lazy val jvm = cross.jvm.dependsOn(sharedJvm % "compile->compile;test->test").settings(
     resolvers += "bintray/non" at "http://dl.bintray.com/non/maven",
     libraryDependencies += "org.jsawn" %% "jawn-parser" % "0.5.4"
   )

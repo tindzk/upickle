@@ -65,8 +65,7 @@ class FailureTests(bundle: Bundle) extends TestSuite{
           intercept[Invalid.Json] {
             read[Int](failureCase)
           }
-        }catch{
-          case e =>
+        }catch{ case e: Throwable =>
             println("DIDN'T FAIL: " + failureCase)
         }
       }
@@ -98,14 +97,14 @@ class FailureTests(bundle: Bundle) extends TestSuite{
           val readFo = () => read[Fi.Fo]( """["omg", {}]""")
           val err = intercept[Invalid.Data]{ readFo() }
           assert(err.msg.contains("Tagged Object"))
-          assert(err.msg.contains("upickle.Fi.Fo"))
+          assert(err.msg.contains("upickle.shared.Fi.Fo"))
         }
 
         'invalidTag2{
           val readFo2 = () => read[Fi]("""["omg", {}]""")
           val err = intercept[Invalid.Data]{ readFo2() }
           assert(err.msg.contains("Tagged Object"))
-          assert(err.msg.contains("upickle.Fi"))
+          assert(err.msg.contains("upickle.shared.Fi"))
         }
       }
     }
