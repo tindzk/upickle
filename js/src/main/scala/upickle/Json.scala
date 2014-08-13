@@ -1,10 +1,8 @@
 package upickle
-import acyclic.file
-import scalajs.js
 
+import scala.scalajs.js
 
-package object json {
-
+object Json extends JsonImpl{
   def read(s: String): Js.Value = {
     def walk(value: Any): Js.Value = value match{
       case s: js.String => Js.String(s)

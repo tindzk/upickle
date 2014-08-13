@@ -20,16 +20,48 @@ object Build extends sbt.Build{
       Some("releases"  at "https://oss.sonatype.org/service/local/staging/deploy/maven2")
     },
     libraryDependencies ++= Seq(
+      "com.lihaoyi" %% "acyclic" % "0.1.2" % "provided"
+    ),
+    autoCompilerPlugins := true,
+
+    addCompilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.2"),
+    pomExtra :=
+      <url>https://github.com/lihaoyi/upickle</url>
+      <licenses>
+        <license>
+          <name>MIT license</name>
+          <url>http://www.opensource.org/licenses/mit-license.php</url>
+        </license>
+      </licenses>
+      <scm>
+        <url>git://github.com/lihaoyi/upickle.git</url>
+        <connection>scm:git://github.com/lihaoyi/upickle.git</connection>
+      </scm>
+      <developers>
+        <developer>
+          <id>lihaoyi</id>
+          <name>Li Haoyi</name>
+          <url>https://github.com/lihaoyi</url>
+        </developer>
+      </developers>
+
+  )
+
+  lazy val root = cross.root
+
+  lazy val shared = project.in(file("shared")).settings(scalaJSSettings:_*).settings(
+    libraryDependencies ++= Seq(
       "com.lihaoyi" %% "acyclic" % "0.1.2" % "provided",
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided"
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
+      "com.lihaoyi" %%% "utest" % "0.2.0"
     ) ++ (
       if (scalaVersion.value startsWith "2.11.") Nil
-      else Seq( 
+      else Seq(
         "org.scalamacros" %% s"quasiquotes" % "2.0.0" % "provided",
         compilerPlugin("org.scalamacros" % s"paradise" % "2.0.0" cross CrossVersion.full)
       )
     ),
-
+    addCompilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.2"),
     sourceGenerators in Compile <+= sourceManaged in Compile map { dir =>
       val file = dir / "upickle" / "Generated.scala"
       val tuplesAndCases = (1 to 22).map{ i =>
@@ -87,39 +119,13 @@ object Build extends sbt.Build{
         }
       """)
       Seq(file)
-    },
-    autoCompilerPlugins := true,
-
-    addCompilerPlugin("com.lihaoyi" %% "acyclic" % "0.1.2"),
-    pomExtra :=
-      <url>https://github.com/lihaoyi/upickle</url>
-      <licenses>
-        <license>
-          <name>MIT license</name>
-          <url>http://www.opensource.org/licenses/mit-license.php</url>
-        </license>
-      </licenses>
-      <scm>
-        <url>git://github.com/lihaoyi/upickle.git</url>
-        <connection>scm:git://github.com/lihaoyi/upickle.git</connection>
-      </scm>
-      <developers>
-        <developer>
-          <id>lihaoyi</id>
-          <name>Li Haoyi</name>
-          <url>https://github.com/lihaoyi</url>
-        </developer>
-      </developers>
-
+    }
   )
-
-  lazy val root = cross.root
-
-  lazy val js = cross.js.settings(
+  lazy val js = cross.js.dependsOn(shared % "compile->compile;test->test").settings(
     (jsEnv in Test) := new NodeJSEnv
   )
 
-  lazy val jvm = cross.jvm.settings(
+  lazy val jvm = cross.jvm.dependsOn(shared % "compile->compile;test->test").settings(
     resolvers += "bintray/non" at "http://dl.bintray.com/non/maven",
     libraryDependencies += "org.jsawn" %% "jawn-parser" % "0.5.4"
   )

@@ -61,3 +61,7 @@ object Js {
   }
 }
 
+trait JsonImpl{
+  def read(s: String): Js.Value
+  def write(v: Js.Value): String
+}

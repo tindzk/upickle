@@ -1,4 +1,6 @@
+package upickle
 import scala.reflect.ClassTag
+import upickle._
 import acyclic.file
 
 /**
@@ -7,7 +9,7 @@ import acyclic.file
  * - Is there an implicit pickler for that type?
  * - Does the companion have matching apply/unapply?
  */
-package object upickle extends Implicits with Generated with Types{
+class Bundle(val json: JsonImpl) extends Implicits with Generated with Types{
 
   /**
    * APIs that need to be exposed to the outside world to support Macros

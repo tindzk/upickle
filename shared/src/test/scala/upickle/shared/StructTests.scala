@@ -1,13 +1,14 @@
 package upickle
-import utest._
+package shared
+
 import scala.concurrent.duration._
-import TestUtil._
+import upickle.Bundle
+import utest._
 
-import scala.reflect.ClassTag
-
-
-object StructTests extends TestSuite{
-
+class StructTests(bundle: Bundle) extends TestSuite{
+  val util = new TestUtil(bundle)
+  import util._
+  import bundle._
   val tests = TestSuite{
     'arrays{
       'empty-rwk(Array[Int](), "[]")(_.toSeq)

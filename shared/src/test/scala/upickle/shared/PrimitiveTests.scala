@@ -1,11 +1,12 @@
 package upickle
+package shared
+
+import upickle.Bundle
 import utest._
-import scala.collection.SortedSet
-import scala.concurrent.duration._
-import TestUtil._
-
-object PrimitiveTests extends TestSuite{
-
+class PrimitiveTests(bundle: Bundle) extends TestSuite{
+  val util = new TestUtil(bundle)
+  import util._
+  import bundle._
   def tests = TestSuite{
     'Boolean{
       'true-rw(true, "true")

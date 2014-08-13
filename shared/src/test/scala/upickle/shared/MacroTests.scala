@@ -1,7 +1,7 @@
 package upickle
-
+package shared
 import utest._
-import upickle.TestUtil._
+import upickle.Bundle
 
 // These guys all have to be out here because uPickle doesn't
 // support pickling local classes and objects
@@ -60,7 +60,10 @@ object Defaults {
   case class ADTb(i: Int = 1, s: String)
   case class ADTc(i: Int = 2, s: String, t: (Double, Double) = (1, 2))
 }
-object MacroTests extends TestSuite{
+class MacroTests(bundle: Bundle) extends TestSuite{
+  val util = new TestUtil(bundle)
+  import util._
+  import bundle._
   import Generic.ADT
   import Hierarchy._
   import Recursive._
@@ -123,23 +126,23 @@ object MacroTests extends TestSuite{
         // class the instance belongs to.
         import Hierarchy._
         'shallow {
-          rw(B(1), """["upickle.Hierarchy.B",{"i":1}]""")
-          rw(C("a", "b"), """["upickle.Hierarchy.C",{"s1":"a","s2":"b"}]""")
+          rw(B(1), """["upickle.shared.Hierarchy.B",{"i":1}]""")
+          rw(C("a", "b"), """["upickle.shared.Hierarchy.C",{"s1":"a","s2":"b"}]""")
 
-          rw(Hierarchy.B(1): Hierarchy.A, """["upickle.Hierarchy.B",{"i":1}]""")
-          rw(C("a", "b"): A, """["upickle.Hierarchy.C",{"s1":"a","s2":"b"}]""")
+          rw(Hierarchy.B(1): Hierarchy.A, """["upickle.shared.Hierarchy.B",{"i":1}]""")
+          rw(C("a", "b"): A, """["upickle.shared.Hierarchy.C",{"s1":"a","s2":"b"}]""")
         }
         'deep{
           import DeepHierarchy._
 
-          rw(B(1), """["upickle.DeepHierarchy.B",{"i":1}]""")
-          rw(B(1): A, """["upickle.DeepHierarchy.B",{"i":1}]""")
-          rw(D("1"), """["upickle.DeepHierarchy.D",{"s":"1"}]""")
-          rw(D("1"): C, """["upickle.DeepHierarchy.D",{"s":"1"}]""")
-          rw(D("1"): A, """["upickle.DeepHierarchy.D",{"s":"1"}]""")
-          rw(E(true), """["upickle.DeepHierarchy.E",{"b":true}]""")
-          rw(E(true): C, """["upickle.DeepHierarchy.E",{"b":true}]""")
-          rw(E(true): A, """["upickle.DeepHierarchy.E",{"b":true}]""")
+          rw(B(1), """["upickle.shared.DeepHierarchy.B",{"i":1}]""")
+          rw(B(1): A, """["upickle.shared.DeepHierarchy.B",{"i":1}]""")
+          rw(D("1"), """["upickle.shared.DeepHierarchy.D",{"s":"1"}]""")
+          rw(D("1"): C, """["upickle.shared.DeepHierarchy.D",{"s":"1"}]""")
+          rw(D("1"): A, """["upickle.shared.DeepHierarchy.D",{"s":"1"}]""")
+          rw(E(true), """["upickle.shared.DeepHierarchy.E",{"b":true}]""")
+          rw(E(true): C, """["upickle.shared.DeepHierarchy.E",{"b":true}]""")
+          rw(E(true): A, """["upickle.shared.DeepHierarchy.E",{"b":true}]""")
         }
       }
       'singleton {
@@ -147,8 +150,8 @@ object MacroTests extends TestSuite{
 
         //        rw(BB, """[0, []]""")
         //        rw(BC, """[1, []]""")
-        rw(BB: AA, """["upickle.Singletons.BB",{}]""")
-        rw(CC: AA, """["upickle.Singletons.CC",{}]""")
+        rw(BB: AA, """["upickle.shared.Singletons.BB",{}]""")
+        rw(CC: AA, """["upickle.shared.Singletons.CC",{}]""")
       }
     }
     'robustnessAgainstVaryingSchemas {
@@ -210,16 +213,11 @@ object MacroTests extends TestSuite{
     'recursiveDataTypes{
       import Recursive._
 
-      rw(End: LL, """["upickle.Recursive.End",{}]""")
-      rw(Node(3, End): LL, """["upickle.Recursive.Node",{"c":3,"next":["upickle.Recursive.End",{}]}]""")
-      rw(Node(6, Node(3, End)), """["upickle.Recursive.Node",{"c":6,"next":["upickle.Recursive.Node",{"c":3,"next":["upickle.Recursive.End",{}]}]}]""")
+      rw(End: LL, """["upickle.shared.Recursive.End",{}]""")
+      rw(Node(3, End): LL, """["upickle.shared.Recursive.Node",{"c":3,"next":["upickle.shared.Recursive.End",{}]}]""")
+      rw(Node(6, Node(3, End)), """["upickle.shared.Recursive.Node",{"c":6,"next":["upickle.shared.Recursive.Node",{"c":3,"next":["upickle.shared.Recursive.End",{}]}]}]""")
     }
     'performance{
-      import Generic.ADT
-      import Hierarchy._
-      import Recursive._
-      import Defaults._
-      import ADTs.ADT0
 
       // Some arbitrary data that represents a mix of all the different
       // ways things can be pickled and unpickled

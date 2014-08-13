@@ -107,6 +107,7 @@ object Aliases{
  * package to form the public API
  */
 trait Types{
+  val json: JsonImpl
   type ReadWriter[T] = Reader[T] with Writer[T]
 
   /**

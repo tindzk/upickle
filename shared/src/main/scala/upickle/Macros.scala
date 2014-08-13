@@ -35,7 +35,7 @@ object Macros {
       )
 
       val msg = "Tagged Object " + tpe.typeSymbol.fullName
-      q"""upickle.validateReader($msg){$x}"""
+      q"""validateReader($msg){$x}"""
     }
   }
   def macroWImpl[T: c.WeakTypeTag](c: Context) = {
@@ -44,7 +44,7 @@ object Macros {
     c.Expr[Writer[T]]{
       picklerFor(c)(tpe, RW.W)(
         _.map(p => q"$p.write": Tree)
-         .reduce((a, b) => q"upickle.Internal.mergeable($a) merge $b")
+         .reduce((a, b) => q"Internal.mergeable($a) merge $b")
       )
     }
   }
@@ -82,7 +82,7 @@ object Macros {
       val sealedParent = tpe.baseClasses.find(_.asClass.isSealed)
       sealedParent.fold(pickler){ parent =>
         val index = customKey(c)(tpe.typeSymbol).getOrElse(tpe.typeSymbol.fullName)
-        q"upickle.Internal.annotate($pickler, $index)"
+        q"Internal.annotate($pickler, $index)"
       }
     }
 
@@ -96,8 +96,8 @@ object Macros {
         val combined = treeMaker(subPicklers)
         val knotName = newTermName("knot"+rw.short)
         q"""
-          upickle.Internal.$knotName{implicit i: upickle.Knot.${newTypeName(rw.short)}[$tpe] =>
-            val x = upickle.${newTermName(rw.long)}[$tpe]($combined)
+          Internal.$knotName{implicit i: Knot.${newTypeName(rw.short)}[$tpe] =>
+            val x = ${newTermName(rw.long)}[$tpe]($combined)
             i.copyFrom(x)
             x
           }
@@ -106,7 +106,7 @@ object Macros {
 
       case x if tpe.typeSymbol.isModuleClass =>
         val mod = tpe.typeSymbol.asClass.module
-        annotate(q"upickle.Internal.${newTermName("Case0"+rw.short)}($mod)")
+        annotate(q"Internal.${newTermName("Case0"+rw.short)}($mod)")
 
       case x => // I'm a class
 
@@ -133,15 +133,15 @@ object Macros {
             val defaultName = newTermName("apply$default$" + (i + 1))
             companion.typeSignature.member(defaultName) match{
               case NoSymbol => q"null"
-              case x => q"upickle.writeJs($companion.$defaultName)"
+              case x => q"writeJs($companion.$defaultName)"
             }
           }
           if (args.length == 0) // 0-arg case classes are treated like `object`s
-            q"upickle.Internal.${newTermName("Case0"+rw.short)}($companion())"
+            q"Internal.${newTermName("Case0"+rw.short)}($companion())"
           else if (args.length == 1 && rw == RW.W) // 1-arg case classes need their output wrapped in a Tuple1
-            q"upickle.Internal.$rwName(x => $companion.$actionName(x).map(Tuple1.apply), Array(..$args), Array(..$defaults)): upickle.${newTypeName(rw.long)}[$tpe]"
+            q"Internal.$rwName(x => $companion.$actionName(x).map(Tuple1.apply), Array(..$args), Array(..$defaults)): ${newTypeName(rw.long)}[$tpe]"
           else // Otherwise, reading and writing are kinda identical
-            q"upickle.Internal.$rwName($companion.$actionName, Array(..$args), Array(..$defaults)): upickle.${newTypeName(rw.long)}[$tpe]"
+            q"Internal.$rwName($companion.$actionName, Array(..$args), Array(..$defaults)): ${newTypeName(rw.long)}[$tpe]"
         }
 
         annotate(pickler)

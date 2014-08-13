@@ -1,6 +1,11 @@
 package upickle
+package shared
 import utest._
-object JsonTests extends TestSuite{
+import upickle.{Js, Bundle}
+
+class JsonTests(bundle: Bundle) extends TestSuite{
+  val util = new TestUtil(bundle)
+  import bundle._
   val tests = TestSuite{
     val ugly =
       """
