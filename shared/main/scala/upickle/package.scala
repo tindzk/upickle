@@ -1,6 +1,8 @@
 import scala.reflect.ClassTag
 import acyclic.file
 
+import upickle.Configuration.Default
+
 /**
  * Picklite tries the following mechanisms for pickling a type
  *

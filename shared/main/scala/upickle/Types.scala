@@ -1,5 +1,6 @@
 package upickle
 
+import scala.reflect.ClassTag
 import scala.{PartialFunction => PF}
 import language.experimental.macros
 import scala.annotation.implicitNotFound
@@ -19,7 +20,7 @@ trait Writer[T]{
   }
 }
 object Writer{
-  implicit def macroW[T]: Writer[T] = macro Macros.macroWImpl[T]
+  implicit def macroW[T](implicit config: Configuration): Writer[T] = macro Macros.macroWImpl[T]
   /**
    * Helper class to make it convenient to create instances of [[Writer]]
    * from the equivalent function
@@ -45,7 +46,7 @@ trait Reader[T]{
 }
 object Reader{
 
-  implicit def macroR[T]: Reader[T] = macro Macros.macroRImpl[T]
+  implicit def macroR[T](implicit config: Configuration): Reader[T] = macro Macros.macroRImpl[T]
   /**
    * Helper class to make it convenient to create instances of [[Reader]]
    * from the equivalent function
@@ -137,4 +138,22 @@ trait Types{
    * Deserialize a `Js.Value` object of type [[T]]
    */
   def readJs[T: Reader](expr: Js.Value): T = implicitly[Reader[T]].read(expr)
+}
+
+trait Configuration {
+  /* Configure the sum encoding by implementing these two methods. */
+  def annotate[T: ClassTag](rw: Reader[T], n: String): Reader[T]
+  def annotate[T: ClassTag](rw: Writer[T], n: String): Writer[T]
+}
+
+object Configuration {
+  case object Default extends Configuration {
+    def annotate[T: ClassTag](rd: Reader[T], n: String) = Reader[T] {
+      case Js.Arr(Js.Str(`n`), x) => rd.read(x)
+    }
+
+    def annotate[T: ClassTag](wr: Writer[T], n: String) = Writer[T] {
+      case x: T => Js.Arr(Js.Str(n), wr.write(x))
+    }
+  }
 }

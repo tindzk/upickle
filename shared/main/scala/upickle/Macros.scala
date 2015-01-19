@@ -26,7 +26,7 @@ object Macros {
     object R extends RW("R", "Reader", Seq("apply"))
     object W extends RW("W", "Writer", Seq("unapply", "unapplySeq"))
   }
-  def macroRImpl[T: c.WeakTypeTag](c: Context) = {
+  def macroRImpl[T: c.WeakTypeTag](c: Context)(config: c.Expr[Configuration]) = {
     import c.universe._
     val tpe = weakTypeTag[T].tpe
     assert(!tpe.typeSymbol.fullName.startsWith("scala."))
@@ -34,7 +34,7 @@ object Macros {
       val x = picklerFor(c)(tpe, RW.R)(
         _.map(p => q"$p.read": Tree)
          .reduce((a, b) => q"$a orElse $b")
-      )
+      )(config)
 
       val msg = "Tagged Object " + tpe.typeSymbol.fullName
       q"""upickle.Internal.validateReader($msg){$x}"""
@@ -42,7 +42,7 @@ object Macros {
 //    println(res)
     res
   }
-  def macroWImpl[T: c.WeakTypeTag](c: Context) = {
+  def macroWImpl[T: c.WeakTypeTag](c: Context)(config: c.Expr[Configuration]) = {
     import c.universe._
     val tpe = weakTypeTag[T].tpe
     assert(!tpe.typeSymbol.fullName.startsWith("scala."))
@@ -55,7 +55,7 @@ object Macros {
           things.map(p => q"$p.write": Tree)
                 .reduce((a, b) => q"upickle.Internal.merge($a, $b)")
         }
-      }
+      }(config)
     }
 //    println(res)
     res
@@ -91,7 +91,8 @@ object Macros {
    */
   def picklerFor(c: Context)
                 (tpe: c.Type, rw: RW)
-                (treeMaker: Seq[c.Tree] => c.Tree): c.Tree = {
+                (treeMaker: Seq[c.Tree] => c.Tree)
+                (implicit config: c.Expr[Configuration]): c.Tree = {
 
     import c.universe._
 //    println("picklerFor " + tpe)
@@ -101,7 +102,7 @@ object Macros {
       val sealedParent = tpe.baseClasses.find(_.asClass.isSealed)
       sealedParent.fold(pickler){ parent =>
         val index = customKey(c)(tpe.typeSymbol).getOrElse(tpe.typeSymbol.fullName)
-        q"upickle.Internal.annotate($pickler, $index)"
+        q"$config.annotate($pickler, $index)"
       }
     }
 
