@@ -147,7 +147,7 @@ trait Configuration {
 }
 
 object Configuration {
-  case object Default extends Configuration {
+  implicit case object Default extends Configuration {
     def annotate[T: ClassTag](rd: Reader[T], n: String) = Reader[T] {
       case Js.Arr(Js.Str(`n`), x) => rd.read(x)
     }
