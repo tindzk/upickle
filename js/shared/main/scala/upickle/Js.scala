@@ -1,10 +1,9 @@
 package upickle
+
 import acyclic.file
-import scala.annotation.switch
-import scala.collection.mutable.StringBuilder
 
 /**
- * Exceptions that can be thrown by upickle; placed in the same file
+ * Exceptions that can be thrown by uPickle; placed in the same file
  * as JSON parser due to circular dependencies between exception types
  * and JSON types
  */

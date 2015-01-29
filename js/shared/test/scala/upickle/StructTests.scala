@@ -1,13 +1,22 @@
 package upickle
+
 import utest._
 import scala.concurrent.duration._
-import TestUtil._
 
 import scala.reflect.ClassTag
 
+object StructTests extends TestSuite {
+  object MyPicklers extends AutoPicklers with Picklers {
+    val config = Configuration.Default
+  }
 
-object StructTests extends TestSuite{
+  val testUtil = upickle.TestUtil(MyPicklers)
+
+  import MyPicklers._
+  import testUtil._
+
   Seq(1).to[Vector]
+
   val tests = TestSuite{
     'arrays{
       'empty-rwk(Array[Int](), "[]")(_.toSeq)
@@ -15,7 +24,6 @@ object StructTests extends TestSuite{
       'Int-rwk(Array(1, 2, 3, 4, 5), "[1,2,3,4,5]")(_.toSeq)
       'String-rwk(Array("omg", "i am", "cow"), """["omg","i am","cow"]""")(_.toSeq)
       'Nulls-rwk(Array(null, "i am", null), """[null,"i am",null]""")(_.toSeq)
-
     }
 
     'tuples{

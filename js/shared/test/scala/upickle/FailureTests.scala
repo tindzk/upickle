@@ -12,7 +12,14 @@ object Fi{
 * InvalidData. If any assertion errors, match errors, number
 * format errors or similar leak through, we've failed
 */
-object FailureTests extends TestSuite{
+object FailureTests extends TestSuite {
+  object MyPicklers extends AutoPicklers with Picklers {
+    val config = Configuration.Default
+  }
+
+  val testUtil = upickle.TestUtil(MyPicklers)
+
+  import MyPicklers._
 
   def tests = TestSuite {
     'jsonFailures {
@@ -80,7 +87,7 @@ object FailureTests extends TestSuite{
         // Separate this guy out because the read macro and
         // the intercept macro play badly with each other
         'missingKey {
-          val readFoo = () => read[Fee]( """{"i": 123}""")(Reader.macroR[Fee])
+          val readFoo = () => read[Fee]( """{"i": 123}""")(MyPicklers.macroR[Fee])
           val err = intercept[Invalid.Data]{ readFoo() }
           assert(err.msg.contains("Key Missing: s"))
         }

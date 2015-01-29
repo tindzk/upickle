@@ -1,10 +1,16 @@
 package upickle
-import utest._
-import scala.collection.SortedSet
-import scala.concurrent.duration._
-import TestUtil._
 
-object PrimitiveTests extends TestSuite{
+import utest._
+
+object PrimitiveTests extends TestSuite {
+  object MyPicklers extends Picklers {
+    val config = Configuration.Default
+  }
+
+  val testUtil = upickle.TestUtil(MyPicklers)
+
+  import MyPicklers._
+  import testUtil._
 
   def tests = TestSuite{
     'Unit{

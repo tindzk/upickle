@@ -1,8 +1,11 @@
 package upickle
 
-import ScalaVersionStubs._
 import scala.annotation.StaticAnnotation
 import scala.language.experimental.macros
+
+import acyclic.file
+
+import ScalaVersionStubs._
 
 /**
  * Used to annotate either case classes or their fields, telling uPickle
@@ -38,7 +41,7 @@ object Macros {
       )
 
       val msg = "Tagged Object " + tpe.typeSymbol.fullName
-      q"""upickle.Internal.validateReader($msg){$x}"""
+      q"""upickle.MacrosUtils.validateReader($msg){$x}"""
     }
   }
 
@@ -50,9 +53,9 @@ object Macros {
 
     c.Expr[Writer[T]] {
       picklerFor(c)(tpe, RW.W) { things =>
-        if (things.length == 1) q"upickle.Internal.merge0(${things(0)}.write)"
+        if (things.length == 1) q"upickle.MacrosUtils.merge0(${things(0)}.write)"
         else things.map(p => q"$p.write": Tree)
-                   .reduce((a, b) => q"upickle.Internal.merge($a, $b)")
+                   .reduce((a, b) => q"upickle.MacrosUtils.merge($a, $b)")
       }
     }
   }
@@ -84,7 +87,7 @@ object Macros {
     val x = c.fresh[TermName]("x")
 
     q"""
-       upickle.Internal.$knotName{implicit $i: upickle.Knot.${newTypeName(rw.short)}[$tpe] =>
+       upickle.MacrosUtils.$knotName{implicit $i: upickle.Knot.${newTypeName(rw.short)}[$tpe] =>
           val $x = $pick
           $i.copyFrom($x)
           $x
@@ -131,7 +134,7 @@ object Macros {
     val mod = tpe.typeSymbol.asClass.module
 
     import c.universe._
-    annotate(c)(tpe)(q"upickle.Internal.${newTermName("Case0"+rw.short)}[$tpe]($mod)")
+    annotate(c)(tpe)(q"upickle.MacrosUtils.${newTermName("Case0"+rw.short)}[$tpe]($mod)")
   }
 
   /** If there is a sealed base class, annotate the pickled tree in the JSON
@@ -145,7 +148,7 @@ object Macros {
     val sealedParent = tpe.baseClasses.find(_.asClass.isSealed)
     sealedParent.fold(pickler) { parent =>
       val index = customKey(c)(tpe.typeSymbol).getOrElse(tpe.typeSymbol.fullName)
-      q"upickle.Internal.annotate($pickler, $index)"
+      q"implicitly[AutoPicklers].config.annotate($pickler, $index)"
     }
   }
 
@@ -165,6 +168,7 @@ object Macros {
                  (treeMaker: Seq[c.Tree] => c.Tree) =
   {
     import c.universe._
+    import compat._
 
     val companion = companionTree(c)(tpe)
 
@@ -208,7 +212,7 @@ object Macros {
       val defaultName = newTermName("apply$default$" + (i + 1))
       companion.tpe.member(defaultName) match{
         case NoSymbol => q"null"
-        case _ => q"upickle.writeJs($companion.$defaultName)"
+        case _ => q"implicitly[AutoPicklers].writeJs($companion.$defaultName)"
       }
     }
 
@@ -230,19 +234,19 @@ object Macros {
 
     val pickler =
       if (args.length == 0) // 0-arg case classes are treated like `object`s
-        q"upickle.Internal.${newTermName("Case0"+rw.short)}($companion())"
+        q"upickle.MacrosUtils.${newTermName("Case0"+rw.short)}($companion())"
       else if (args.length == 1 && rw == RW.W) // 1-arg case classes need their output wrapped in a Tuple1
-        q"upickle.Internal.$rwName(x => $companion.$actionName[..$typeArgs](x).map(Tuple1.apply), Array(..$args), Array(..$defaults)): upickle.${newTypeName(rw.long)}[$tpe]"
+        q"implicitly[AutoPicklers].$rwName(x => $companion.$actionName[..$typeArgs](x).map(Tuple1.apply), Array(..$args), Array(..$defaults)): ${newTypeName(rw.long)}[$tpe]"
       else // Otherwise, reading and writing are kinda identical
         q"""{
           ..${typeArgAssigns.flatten}
 
           {
-            upickle.Internal.$rwName[..$argSymTypes, $tpe](
+            implicitly[AutoPicklers].$rwName[..$argSymTypes, $tpe](
               $companion.$actionName[..$typeArgs],
               Array(..$args),
               Array(..$defaults)
-            )(..$typeArgNames): upickle.${newTypeName(rw.long)}[$tpe]
+            )(..$typeArgNames): ${newTypeName(rw.long)}[$tpe]
           }
         }"""
     val x = annotate(c)(tpe)(pickler)

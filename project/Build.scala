@@ -10,7 +10,7 @@ object Build extends sbt.Build{
     organization := "com.lihaoyi",
 
     version := "0.2.6-RC1",
-    scalaVersion := "2.10.4",
+    scalaVersion := "2.11.5",
     name := "upickle",
 
     scalacOptions := Seq("-unchecked",
@@ -52,11 +52,11 @@ object Build extends sbt.Build{
           else s"f.tupled(readJs[Tuple$i[$typeTuple]](x))"
 
         (s"""
-        implicit def Tuple${i}W[$writerTypes] = W[Tuple${i}[$typeTuple]](
+        implicit def Tuple${i}W[$writerTypes] = W[Tuple$i[$typeTuple]](
           x => Js.Arr($written)
         )
-        implicit def Tuple${i}R[$readerTypes] = R[Tuple${i}[$typeTuple]](
-          validate("Array(${i})"){case Js.Arr($pattern) => Tuple${i}($read)}
+        implicit def Tuple${i}R[$readerTypes] = R[Tuple$i[$typeTuple]](
+          Utils.validate("Array($i)"){case Js.Arr($pattern) => Tuple$i($read)}
         )
         """, s"""
         def Case${i}R[$readerTypes, V]
@@ -64,7 +64,7 @@ object Build extends sbt.Build{
           = RCase[V](names, defaults, {case x => $caseReader})
 
         def Case${i}W[$writerTypes, V]
-                     (g: V => Option[Tuple${i}[$typeTuple]], names: Array[String], defaults: Array[Js.Value])
+                     (g: V => Option[Tuple$i[$typeTuple]], names: Array[String], defaults: Array[Js.Value])
           = WCase[V](names, defaults, x => writeJs(g(x).get))
         """)
       }
@@ -79,12 +79,12 @@ object Build extends sbt.Build{
          * Auto-generated picklers and unpicklers, used for creating the 22
          * versions of tuple-picklers and case-class picklers
          */
-        trait Generated extends Types with GeneratedUtil{
+        trait GeneratedPicklers { this: Upickle =>
           import Aliases._
-
           ${tuples.mkString("\n")}
         }
-        trait GeneratedInternal extends Generated{
+
+        trait GeneratedInternal extends GeneratedPicklers with GenerationUtils { this: Upickle =>
           ${cases.mkString("\n")}
         }
       """)

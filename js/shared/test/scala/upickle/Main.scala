@@ -1,12 +1,13 @@
 package example
 
-import upickle.TestUtil._
 import upickle._
-import utest._
-
 
 object TestUPickle extends App {
-  implicit val ww1 = implicitly[upickle.Writer[A1]]
+  object MyPicklers extends AutoPicklers with Picklers {
+    val config = Configuration.Default
+    implicitly[upickle.Writer[A1]]
+  }
+
   // kill compiler
   case class A1 (x: A2 , y: A2 )
   case class A2 (x: A3 , y: A3 )

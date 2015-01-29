@@ -1,7 +1,6 @@
 package upickle
 
 import utest._
-import upickle.TestUtil._
 
 // These guys all have to be out here because uPickle doesn't
 // support pickling local classes and objects
@@ -136,6 +135,16 @@ object MacroTests extends TestSuite{
   import Recursive._
   import Defaults._
   import ADTs.ADT0
+
+  object MyPicklers extends AutoPicklers with Picklers {
+    val config = Configuration.Default
+  }
+
+  val testUtil = upickle.TestUtil(MyPicklers)
+
+  import MyPicklers._
+  import testUtil._
+
   type Data = ADT[Seq[(Int, Int)], String, A, LL, ADTc, ADT0]
   val data: Data = ADT(
     Vector((1, 2), (3, 4), (4, 5), (6, 7), (8, 9), (10, 11), (12, 13)),

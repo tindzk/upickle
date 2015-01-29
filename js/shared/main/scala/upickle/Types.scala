@@ -4,6 +4,8 @@ import scala.{PartialFunction => PF}
 import language.experimental.macros
 import scala.annotation.implicitNotFound
 
+import acyclic.file
+
 /**
  * A typeclass that allows you to serialize a type [[T]] to JSON, and
  * eventually to a string
@@ -19,7 +21,6 @@ trait Writer[T]{
   }
 }
 object Writer{
-  implicit def macroW[T]: Writer[T] = macro Macros.macroWImpl[T]
   /**
    * Helper class to make it convenient to create instances of [[Writer]]
    * from the equivalent function
@@ -44,8 +45,6 @@ trait Reader[T]{
   }: PF[Js.Value, T]) orElse read0
 }
 object Reader{
-
-  implicit def macroR[T]: Reader[T] = macro Macros.macroRImpl[T]
   /**
    * Helper class to make it convenient to create instances of [[Reader]]
    * from the equivalent function
@@ -112,29 +111,4 @@ object Aliases{
 
   type RW[T] = R[T] with W[T]
   val RW = ReadWriter
-}
-/**
- * Basic functionality to be able to read and write objects. Kept as a trait so
- * other internal files can use it, while also mixing it into the `upickle`
- * package to form the public API
- */
-trait Types{
-  type ReadWriter[T] = Reader[T] with Writer[T]
-
-  /**
-   * Serialize an object of type [[T]] to a `String`
-   */
-  def write[T: Writer](expr: T): String = json.write(writeJs(expr))
-  /**
-   * Serialize an object of type [[T]] to a `Js.Value`
-   */
-  def writeJs[T: Writer](expr: T): Js.Value = implicitly[Writer[T]].write(expr)
-  /**
-   * Deserialize a `String` object of type [[T]]
-   */
-  def read[T: Reader](expr: String): T = readJs[T](json.read(expr))
-  /**
-   * Deserialize a `Js.Value` object of type [[T]]
-   */
-  def readJs[T: Reader](expr: Js.Value): T = implicitly[Reader[T]].read(expr)
 }
